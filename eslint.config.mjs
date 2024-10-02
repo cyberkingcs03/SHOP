@@ -3,23 +3,27 @@ import pluginJs from "@eslint/js";
 import pluginJest from "eslint-plugin-jest";
 
 export default [
-  // Apply rules to all JS files with CommonJS support
+  // Apply rules to all JS files (Node.js environment with CommonJS)
   {
     files: ["**/*.js"],
-    languageOptions: { 
-      sourceType: "commonjs", // Use CommonJS module system
-      globals: globals.node,  // Enable Node.js globals like `__dirname`, `require`, etc.
+    languageOptions: {
+      sourceType: "commonjs", // CommonJS module system
+      globals: globals.node,  // Add Node.js globals like __dirname, require
+    },
+    plugins: {
+      js: pluginJs,
     },
     rules: {
-      "no-undef": "off", // Disable `no-undef` rule to avoid issues with Node.js globals
+      ...pluginJs.configs.recommended.rules, // Use ESLint recommended rules
     },
   },
-  // Define global variables for browser code (if you have frontend code as well)
+  // Define global variables for browser code
   {
-    languageOptions: { globals: globals.browser },
+    files: ["**/*.js"], // Apply to all JavaScript files (could be browser or mixed)
+    languageOptions: {
+      globals: globals.browser, // Include browser globals like window, document
+    },
   },
-  // Use recommended ESLint rules
-  pluginJs.configs.recommended,
   // Add Jest plugin configuration for test files
   {
     files: ["**/*.test.js"], // Apply only to test files
@@ -27,7 +31,7 @@ export default [
       jest: pluginJest,
     },
     languageOptions: {
-      globals: globals.jest, // Define Jest globals like `test` and `expect`
+      globals: globals.jest, // Include Jest globals like test, expect
     },
     rules: {
       "jest/no-disabled-tests": "warn",
