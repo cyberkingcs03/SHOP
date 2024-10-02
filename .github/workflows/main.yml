@@ -1,70 +1,74 @@
-name: SHOP Website Secure CI/CD Pipeline Demo
+name: CI Pipeline with Snyk and Security Testing
 
-# Trigger the pipeline when code is pushed to the master branch on git
 on:
   push:
     branches:
       - main
-     
-      
+  schedule:
+    - cron: '0 0 * * 0' # Optional: Schedule weekly scans
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout the code from GitHub
+      # Step 1: Checkout the repository code
       - name: Checkout code
         uses: actions/checkout@v2
 
-      # Step 2: Set up Node.js for running the app
+      # Step 2: Set up Node.js
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: '18' # You can adjust this to any Node.js version
+          node-version: '14'
 
-      # Step 3: Install the Node.js application dependencies
+      # Step 3: Install dependencies
       - name: Install dependencies
         run: npm install
 
-      # Step 4: Run ESLint for static analysis (SAST)
+      # Step 4: Run ESLint for SAST (Static Application Security Testing)
       - name: Run ESLint (SAST)
         run: npx eslint .
 
-      # Step 5: Run Snyk for dependency vulnerability scanning
-      - name: Scan dependencies with Snyk
+      # Step 5: Scan dependencies with Snyk
+      - name: Snyk Dependency Scan
         uses: snyk/actions/node@master
         env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }} # You must add your Snyk token in the repository secrets
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: test --json > snyk-report.json
+        continue-on-error: true
 
-      # Step 6: Build Docker image for your app
+      # Step 6: Upload Snyk report as an artifact
+      - name: Upload Snyk Report
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: snyk-report
+          path: snyk-report.json
+
+     
+
+      # Step 8: Build Docker image
       - name: Build Docker image
-        run: docker build -t myappshop:latest .
+        run: docker build -t myapp:latest .
 
-      # Step 7: Scan Docker image with Trivy for vulnerabilities
-      - name: Scan Docker image with Trivy
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: myapp:latest
-
-      # Step 8: Run the containerized application
+      # Step 9: Run Docker container
       - name: Run Docker container
-        run: docker run -d -p 3000:3000 myappshop:latest
+        run: docker run -d -p 3000:3000 myapp:latest
 
-      # Step 9: OWASP ZAP Scan (DAST)
-      - name: Run OWASP ZAP (DAST)
-        uses: zaproxy/action-full-scan@v0.11.0
+      # Step 10: OWASP ZAP Full Scan (DAST)
+      - name: OWASP ZAP Full Scan (DAST)
+        uses: zaproxy/action-full-scan@v0.1.0
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          docker_name: 'ghcr.io/zaproxy/zaproxy:stable'
-          target: 'http://localhost:3000'  # This is the target app running in Docker
-          rules_file_name: '.zap/rules.tsv'
-          cmd_options: '-r report_html.html' # ZAP will generate the HTML report
+          target: 'http://localhost:3000'
+          format: 'html'
+          report: 'zap_report.html'
 
-          
-      # Step 10: Upload ZAP report as an artifact for future reference
-      - name: Upload ZAP report
-        uses: actions/upload-artifact@v3
+      # Step 11: Upload ZAP report as an artifact
+      - name: Upload ZAP Report
+        uses: actions/upload-artifact@v2
         with:
-          name: report_html
-          path: report_html.html
+          name: zap-report
+          path: zap_report.html
+
