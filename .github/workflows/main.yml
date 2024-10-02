@@ -1,4 +1,4 @@
-name: SHOP Website Secure CI/CD Pipeline
+name: SHOP Website Secure CI/CD Pipeline Demo
 
 # Trigger the pipeline when code is pushed to the master branch on git
 on:
