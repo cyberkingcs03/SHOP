@@ -42,7 +42,7 @@ jobs:
       # Step 6: Upload Snyk report as an artifact
       - name: Upload Snyk Report
         if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: snyk-report
           path: snyk-report.json
@@ -67,7 +67,7 @@ jobs:
 
       # Step 11: Upload ZAP report as an artifact
       - name: Upload ZAP Report
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: zap-report
           path: zap_report.html
